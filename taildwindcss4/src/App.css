@@ -1,0 +1,33 @@
+#root {
+    margin: 0 auto;
+}
+
+.fade-in-slide {
+    animation: fade-slide 1s ease-out forwards;
+}
+
+.fade-out-slide {
+    animation: fade-slide-out 0.5s ease forwards;
+}
+
+@keyframes fade-slide {
+    0% {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0)();
+    }
+}
+
+@keyframes fade-slide-out {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}

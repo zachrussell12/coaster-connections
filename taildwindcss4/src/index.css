@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Russo One", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --primary: #061411;
+  --card-foreground: #f5fffe;
+  --card-selected: #69e1ff;
+  --button-primary: #195445;
+  --button-hover: #27856d;
+  --background: #baffed;
+}
