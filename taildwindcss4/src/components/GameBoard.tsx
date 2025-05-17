@@ -535,15 +535,15 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                             ))}
                         </div>
                     </div>
-                    <div className="flex flex-col gap-4 relative">
-                        <div className={`flex flex-row gap-4 w-full justify-evenly items-center absolute bg-(--background) h-full ${puzzleFinished ? 'z-15' : '-z-1'} ${puzzleFinished ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
+                    <div className="flex flex-col gap-4 relative justify-center items-center">
+                        <div className={`flex flex-row gap-4 md:w-128 w-full justify-evenly items-cente absolute bg-(--background) h-full ${puzzleFinished ? 'z-15' : '-z-1'} ${puzzleFinished ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
                             <div className="flex flex-col items-center justify-center gap-2">
-                                <h3 className='font-(family-name: --font-body) font-semibold text-2xl'>Mistakes Made:</h3>
-                                <p className='font-display font-normal text-8xl ml-4 align-baseline'>{5 - mistakesRemaining}</p>
+                                <h3 className='font-(family-name: --font-body) font-semibold text-lg md:text-2xl'>Mistakes Made:</h3>
+                                <p className='font-display font-normal text-2xl md:text-8xl ml-4 align-baseline'>{5 - mistakesRemaining}</p>
                             </div>
                             <div className="flex flex-col items-center justify-center gap-2">
-                                <h3 className='font-(family-name: --font-body) font-semibold text-2xl'>Hints Used:</h3>
-                                <p className='font-display font-normal text-8xl ml-4 align-baseline'>{countHintsUsed()}</p>
+                                <h3 className='font-(family-name: --font-body) font-semibold text-lg md:text-2xl'>Hints Used:</h3>
+                                <p className='font-display font-normal text-2xl md:text-8xl ml-4 align-baseline'>{countHintsUsed()}</p>
                             </div>
                         </div>
                         <div className="flex md:flex-col flex-row gap-4 w-full justify-between">
