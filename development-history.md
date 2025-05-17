@@ -31,3 +31,4 @@
 - **Decision 4:** Added basic error handling for a failed fetch. Will add more robust handling later.
 - **Decision 5:** Updated backend functions to execute at their set times now sync at 3am every month and puzzle at 8am everyday. 
 - **Decision 6:** Added handling so that a solution that is already in the row that it needs to be does not execute any swap and just gets a div placed over it.
+- **Decision 7:** Updated vite.config.ts to include build directory
