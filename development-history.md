@@ -32,3 +32,11 @@
 - **Decision 5:** Updated backend functions to execute at their set times now sync at 3am every month and puzzle at 8am everyday. 
 - **Decision 6:** Added handling so that a solution that is already in the row that it needs to be does not execute any swap and just gets a div placed over it.
 - **Decision 7:** Updated vite.config.ts to include build directory
+
+# May 17th, 2025 (Later)
+
+- **Decision 1:** Added meta tags for link sharing previews.
+- **Decision 2:** Fixed small styling issue on mobile.
+- **Decision 3:** Added link to repository in the top left.
+- **Decision 4:** Added README to base of repo.
+- **Decision 5:** Removed README from frontend folder.

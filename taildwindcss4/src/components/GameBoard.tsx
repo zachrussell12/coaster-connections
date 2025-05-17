@@ -555,7 +555,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                             </div>
                             <Button disabled={selectedItems.length != 4} onClick={() => handleSubmit()}> Submit </Button>
                         </div>
-                        <div className="flex flex-col md:flex-row gap-2 md:mt-4 md:gap-4 min-h-24 pb-4">
+                        <div className="flex flex-col md:flex-row gap-2 md:mt-4 md:gap-4 min-h-24 pb-4 w-full">
                             {getRemainingHints().slice(0, 3).map((solution, index) => (
                                 <div key={index} className="flex md:flex-col flex-row-reverse w-full justify-between md:justify-center items-center gap-2 md:gap-4">
 

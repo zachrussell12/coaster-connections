@@ -26,7 +26,7 @@ function App() {
       yesterday.setDate(today.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
-    if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore8AM)) {
+      if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore8AM)) {
         if (parsedState.solutionsSolved.length > 0 && parsedState.solutionsSolved.length < 3) {
           setContinueGame(true);
         }
@@ -42,6 +42,15 @@ function App() {
     <>
       <main className="h-screen flex items-center justify-center relative bg-(--background)">
         <p className="absolute top-0 right-0 p-4">Made for mimi 💚</p>
+
+        <div className="absolute top-0 left-0 p-4">
+          <a href="https://github.com/zachrussell12/coaster-connections" target="_blank">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+              <path fill-rule="evenodd" d="M6.28 5.22a.75.75 0 0 1 0 1.06L2.56 10l3.72 3.72a.75.75 0 0 1-1.06 1.06L.97 10.53a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Zm7.44 0a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L17.44 10l-3.72-3.72a.75.75 0 0 1 0-1.06ZM11.377 2.011a.75.75 0 0 1 .612.867l-2.5 14.5a.75.75 0 0 1-1.478-.255l2.5-14.5a.75.75 0 0 1 .866-.612Z" clip-rule="evenodd" />
+            </svg>
+          </a>
+        </div>
+
 
         {!gameStarted && (
           <div
