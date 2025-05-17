@@ -168,14 +168,14 @@ export const connectionTypes : ConnectionObject[] = [
         operator: "<=",
         value: [75, 85],
         category: "Top Speed",
-        explanation: "All coasters have a top speed lower than %replace%."
+        explanation: "All coasters have a top speed lower than %replace%km/h."
     },
     {
         quality: "speed",
         operator: ">=",
         value: [115, 125, 135, 150, 160],
         category: "Top Speed",
-        explanation: "All coasters have a top speed greater than %replace%."
+        explanation: "All coasters have a top speed greater than %replace%km/h."
     },
     {
         quality: "height",

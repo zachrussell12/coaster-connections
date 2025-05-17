@@ -8,17 +8,26 @@
 
 # May 15th, 2025
 
-- **Decision 1:** Tweaked backend coaster sync to better handle data from API and include new data for storage
+- **Decision 1:** Tweaked backend coaster sync to better handle data from API and include new data for storage.
 - **Decision 2:** Created puzzle creation cloud function that creates a function everyday at [TIME_NOT_SET].
-- **Decision 3:** Created puzzleConstants in order to generate 4 connections for each day to create a valid puzzle
+- **Decision 3:** Created puzzleConstants in order to generate 4 connections for each day to create a valid puzzle.
 - **Decision 4:** Updated GameBoard component to use the daily puzzle from the database instead of placeholder values.
-- **Decision 5:** Updated various functions to handle real data from the backend to make the game work properly
+- **Decision 5:** Updated various functions to handle real data from the backend to make the game work properly.
 - **Decision 6:** Began working on animation that is played when a user gets a connection group correct.
 - **Decision 7:** Fixed syntax on this file and changed the filename.
 
 # May 16th, 2025
 
-- **Decision 1:** Finished animation for when a player makes a connection
+- **Decision 1:** Finished animation for when a player makes a connection.
 - **Decision 2:** Set up localStorage so player can resume where they left off or revisit a puzzle they already solved.
 - **Decision 3:** Added a "summary" type of overlay at the bottom for when the puzzle is solved.
 - **Decision 4:** Adjusted button text on landing to reflect the state of the puzzle (not started, partially finished, and compelted).
+
+# May 17th, 2025
+
+- **Decision 1:** Adjusted puzzle object coaster_objects field sent from the backend to contain all stats related to the specific coaster now.
+- **Decision 2:** Cleaned up mobile responsiveness of site and made it playable on mobile, but recommended user plays on desktop.
+- **Decision 3:** Adjusted puzzle fetching so it checks the time and adjusts the fetch according to so.
+- **Decision 4:** Added basic error handling for a failed fetch. Will add more robust handling later.
+- **Decision 5:** Updated backend functions to execute at their set times now sync at 3am every month and puzzle at 8am everyday. 
+- **Decision 6:** Added handling so that a solution that is already in the row that it needs to be does not execute any swap and just gets a div placed over it.

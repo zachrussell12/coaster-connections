@@ -13,17 +13,24 @@ function App() {
   const [gameComplete, setGameComplete] = useState<boolean>(false);
 
   useEffect(() => {
-    const today = new Date().toLocaleDateString('en-CA');
     const puzzleState = localStorage.getItem("coasterPuzzleState");
 
-    if(puzzleState){
+    if (puzzleState) {
       const parsedState = JSON.parse(puzzleState);
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-CA');
 
-      if(parsedState.date === today){
-        if(parsedState.solutionsSolved.length > 0 && parsedState.solutionsSolved.length < 3){
+      const isBefore8AM = today.getHours() < 8;
+
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+
+    if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore8AM)) {
+        if (parsedState.solutionsSolved.length > 0 && parsedState.solutionsSolved.length < 3) {
           setContinueGame(true);
         }
-        else if(parsedState.solutionsSolved.length == 4){
+        else if (parsedState.solutionsSolved.length == 4) {
           setGameComplete(true);
         }
       }
@@ -42,11 +49,11 @@ function App() {
               }`}
           >
             <img className="w-16 h-16 mx-auto mb-8" src={logo} alt="Coaster Connections Logo" />
-            <h1 className="text-3xl mb-2 font-display font-normal -skew-x-6 text-(--primary)">
+            <h1 className="text-xl md:text-3xl mb-2 font-display font-normal -skew-x-6 text-(--primary)">
               Coaster Connections
             </h1>
-            <p className="mb-4 font-medium text-(--button-primary)">
-              Group coasters together that share commonalities.
+            <p className="mb-4 font-medium text-(--button-primary) text-base md:text-lg">
+              Group coasters together that share common characteristics.
             </p>
 
             <Button
@@ -62,14 +69,16 @@ function App() {
             >
               {continueGame ? 'Continue' : gameComplete ? 'Review Solution' : 'Play'}
             </Button>
-            <p className="mt-4 text-gray-600">{new Date().toDateString()}</p>
+            <p className="mt-4 text-gray-600 text-sm md:text-base">{new Date().toDateString()}</p>
           </div>
         )}
 
 
         {gameStarted && (
-          <GameBoard fadeInGameProp={fadeInGame}/>
+          <GameBoard fadeInGameProp={fadeInGame} />
         )}
+
+        <p className={`absolute font-(family-name: --font-body) text-gray-400 text-xs bottom-0 pb-4 md:hidden transition-opacity duration-300 ${gameStarted ? 'opacity-0' : 'opacity-100'}`}>For the best experience, visit on desktop.</p>
       </main >
     </>
   );

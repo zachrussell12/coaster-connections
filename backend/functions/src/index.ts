@@ -68,6 +68,19 @@ interface PuzzleObject {
 interface CoasterPuzzleObject {
     name: string,
     imageURL: string,
+    country: string,
+    height: number,
+    inversions: string,
+    launch_types: string[],
+    length: number,
+    manufacturer: string,
+    material_type: string,
+    model: string,
+    opened_year: number,
+    park_name: number,
+    restraint_type: string,
+    seating_type: string,
+    speed: number,
 }
 
 interface ConnectionsSolutionObject {
@@ -122,7 +135,7 @@ async function fetchCoasterDetailsInBatches(
                         ? capitalize(coaster.restraint.name.replace('restraint.', '').replace('.', ' '))
                         : 'Unknown',
                     model: coaster.model?.name || 'Unknown',
-                    opened_date: coaster.openingDate || 'Unknown',
+                    opened_year: coaster.openingDate.split('-')[0] || 'Unknown',
                     status: coaster.status?.name?.replace('status.', '') || 'Unknown',
                     park_name: coaster.park?.name || 'Unknown',
                     rank: coaster.rank || 'Unknown',
@@ -178,7 +191,7 @@ function selectRandomSolutionSet(snapshot: QueryDocumentSnapshot<DocumentData, D
 export const syncCoasterData = onSchedule(
     {
         schedule: '0 3 1 * *',
-        timeZone: 'UTC',
+        timeZone: 'America/New_York',
         secrets: [CAPTAINCOASTER_API_KEY],
     },
     async () => {
@@ -211,7 +224,7 @@ export const syncCoasterData = onSchedule(
 
 export const generateDailyPuzzle = onSchedule(
     {
-        schedule: '27 8 * * *',
+        schedule: '0 8 * * *',
         timeZone: 'America/New_York',
         secrets: [CAPTAINCOASTER_API_KEY],
     },
@@ -258,7 +271,7 @@ export const generateDailyPuzzle = onSchedule(
 
             solution.forEach(coaster => {
                 const data = coaster.data();
-                puzzle.coaster_objects.push({name: data.name, imageURL: data.image});
+                puzzle.coaster_objects.push({name: data.name, imageURL: data.image, country: data.country, height: data.height, inversions: data.inversions, launch_types: data.launch_type, length: data.length, manufacturer: data.manufacturer, material_type: data.material_type, model: data.model, opened_year: data.opened_year, park_name: data.park_name, restraint_type: data.restraint_type, seating_type: data.seating_type, speed: data.speed,});
                 usedCoasters.add(data.name);
                 coastersSequenceSolution.push(data.name);
             });

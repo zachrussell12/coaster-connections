@@ -28,6 +28,19 @@ interface FinalConnectionObject {
 interface CoasterPuzzleObject {
     name: string,
     imageURL: string,
+    country: string,
+    height: number,
+    inversions: string,
+    launch_types: string[],
+    length: number,
+    manufacturer: string,
+    material_type: string,
+    model: string,
+    opened_year: number,
+    park_name: number,
+    restraint_type: string,
+    seating_type: string,
+    speed: number,
 }
 
 interface GameStateInterface {
@@ -43,25 +56,30 @@ interface GameStateInterface {
 
 const fetchTodaysPuzzle = async (): Promise<Puzzle | null> => {
     try {
+        const now = new Date();
+        const isBefore8AM = now.getHours() < 8;
 
-        const docId = new Date().toLocaleDateString('en-CA');
-        //console.log("Attempting to fetch puzzle with ID: ", docId);
-
-        const querySnapshot = await getDoc(doc(database, "daily_puzzles", docId))
-
-        if (querySnapshot.exists()) {
-            console.log("Fetched puzzle")
-            return querySnapshot.data() as Puzzle
+        const targetDate = new Date(now);
+        if (isBefore8AM) {
+            targetDate.setDate(now.getDate() - 1);
         }
 
-        return null
+        const docId = targetDate.toLocaleDateString('en-CA');
 
+        const querySnapshot = await getDoc(doc(database, "daily_puzzles", docId));
+
+        if (querySnapshot.exists()) {
+            return querySnapshot.data() as Puzzle;
+        }
+
+        console.warn("No puzzle found for the given date.");
+        return null;
+
+    } catch (err) {
+        console.error("Error fetching puzzle: " + err);
+        return null;
     }
-    catch (err) {
-        console.log("There was an error fetching today's puzzle." + err);
-        return null
-    }
-}
+};
 
 export default function GameBoard({ fadeInGameProp }: GameProps) {
 
@@ -76,10 +94,9 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
     const [revealHint2, setRevealHint2] = useState<boolean>(false);
     const [revealHint3, setRevealHint3] = useState<boolean>(false);
     const [puzzleFinished, setPuzzleFinished] = useState<boolean>(false);
+    const [gameError, setGameError] = useState<boolean>(false);
 
     useEffect(() => {
-
-        const today = new Date().toLocaleDateString('en-CA');
 
         const fetchData = async () => {
             const puzzle = await fetchTodaysPuzzle();
@@ -88,20 +105,33 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                 setCoasterNames(shuffledNames);
                 setConnectionSolutions(puzzle?.correct_connections);
             }
+            else{
+                setGameError(true);
+            }
         }
 
         const storedState = localStorage.getItem("coasterPuzzleState");
+
         if (storedState) {
             const parsedState = JSON.parse(storedState);
-            if (parsedState.date === today) {
+            const today = new Date();
+            const todayStr = today.toLocaleDateString('en-CA');
+
+            const isBefore8AM = today.getHours() < 8;
+
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+
+            if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore8AM)) {
                 setCoasterNames(sortCoasterNames(parsedState.solutionsSolved, parsedState.coasterNames));
-                setConnectionSolutions(parsedState.connectionSolutions)
+                setConnectionSolutions(parsedState.connectionSolutions);
                 setMistakesRemaining(parsedState.mistakesRemaining);
                 setRevealHint1(parsedState.revealHint1);
                 setRevealHint2(parsedState.revealHint2);
                 setRevealHint3(parsedState.revealHint3);
                 setSolutionsFound(parsedState.solutionsSolved.length);
-                setDiscoveredSolutions(parsedState.solutionsSolved)
+                setDiscoveredSolutions(parsedState.solutionsSolved);
                 return;
             }
         }
@@ -114,10 +144,10 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         if (!coversLoaded && coasterNames.length > 0 && discoveredSolutions.length > 0) {
             assembleFinishedPuzzle(discoveredSolutions);
             setCoversLoaded(true);
-            console.log(solutionsFound);
+            //console.log(solutionsFound);
         }
 
-        console.log(discoveredSolutions);
+        //console.log(discoveredSolutions);
 
         if (discoveredSolutions.length == 4) {
             setPuzzleFinished(true);
@@ -126,7 +156,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
     }, [coasterNames, discoveredSolutions, coversLoaded, puzzleFinished])
 
     const handleItemClick = (name: string) => {
-        console.log(name);
+        //console.log(name);
 
         if (selectedItems.includes(name)) {
             setSelectedItems(selectedItems.filter((i) => i !== name));
@@ -142,11 +172,11 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             }
         }
 
-        console.log(selectedItems);
+        //console.log(selectedItems);
     }
 
     const handleSubmit = () => {
-        console.log(selectedItems);
+        //console.log(selectedItems);
         const solution = checkIfGroupCorrect(selectedItems);
         if (solution) {
             setSolutionsFound((prev) => prev + 1);
@@ -160,7 +190,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
 
         }
         else {
-            console.log("WRONG ANSWER")
+            //console.log("WRONG ANSWER")
             selectedItems.forEach(name => {
                 const button = Array.from(document.querySelectorAll('button'))
                     .find(b => b.textContent?.trim() === name) as HTMLElement | undefined;
@@ -250,11 +280,11 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             removeCommonValues(solutionNodes, swapNodes);
 
 
-            console.log(swapPositions, solutionPositions)
-            console.log(swapNodes)
-            console.log(solutionNodes)
+            //console.log(swapPositions, solutionPositions)
+            //console.log(swapNodes)
+            //console.log(solutionNodes)
 
-            if (solutionNodes.length) {
+            if (solutionNodes.length && swapNodes.length !== 0) {
                 solutionNodes.forEach((node, index) => {
                     swapAnimation(node, swapNodes[index])
                     swapAnimation(swapNodes[index], node)
@@ -271,7 +301,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         createCoverDiv(foundSolution, swapNodes, puzzleSelector, solutionsFound)
 
         //Swap HTML Elements
-        if (solutionsFound != 3) {
+        if (solutionsFound !== 3 || swapNodes.length !== 0) {
             setTimeout(() => {
                 swapNodes.forEach((node, index) => {
                     solutionNodes[index].innerHTML = node.innerHTML
@@ -318,60 +348,55 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
     }
 
     function swapAnimation(fromNode: HTMLElement, toNode: HTMLElement) {
+        const puzzleParent = document.getElementById("puzzle-parent");
+        if (!puzzleParent) return;
 
-        if (fromNode && toNode) {
-            const fromRect = fromNode.getBoundingClientRect();
-            const toRect = toNode.getBoundingClientRect();
-            fromNode.style.opacity = '0';
+        fromNode.style.opacity = '0';
 
-            const xTranslate = toRect.x - fromRect.x;
-            const yTranslate = toRect.y - fromRect.y;
+        const fromRect = fromNode.getBoundingClientRect();
+        const toRect = toNode.getBoundingClientRect();
+        const parentRect = puzzleParent.getBoundingClientRect();
 
-            const newElement = document.createElement('div');
-            newElement.innerHTML = fromNode.innerHTML;
-            newElement.className = 'text-gray-800 font-normal text-sm md:text-xl text-center font-display py-8 px-8 rounded-lg justify-center items-center flex flex-col bg-(--card-foreground)';
+        const xTranslate = toRect.left - fromRect.left;
+        const yTranslate = toRect.top - fromRect.top;
 
-            //console.log(fromNode.textContent)
-            //console.log(`${fromRect.width}px ${fromRect.height}px`)
+        const newElement = document.createElement('div');
+        newElement.innerHTML = fromNode.innerHTML;
+        newElement.className = 'text-gray-800 font-normal text-sm md:text-xl text-center font-display py-4 md:py-8 px-2 rounded-lg cursor-pointer bg-(--card-foreground) justify-center items-center flex flex-col h-32 md:h-48 z-15';
 
-            //console.log(toNode.textContent)
-            //console.log(`${toRect.width}px ${toRect.height}px`)
+        newElement.id = `puzzle-animation-placeholder-${fromNode.id}`;
+        newElement.style.position = 'absolute';
+        newElement.style.left = `${fromRect.left - parentRect.left}px`;
+        newElement.style.top = `${fromRect.top - parentRect.top}px`;
+        newElement.style.width = `${toRect.width}px`;
+        newElement.style.height = `${toRect.height}px`;
+        newElement.style.zIndex = '10';
+        newElement.style.transition = 'transform 0.5s ease';
 
-            newElement.id = `puzzle-animation-placeholder-${fromNode.id}`
-            newElement.style.position = 'absolute';
-            newElement.style.left = `${fromRect.left}px`;
-            newElement.style.top = `${fromRect.top}px`;
-            newElement.style.width = `${toRect.width}px`;
-            newElement.style.height = `${toRect.height}px`;
-            newElement.style.zIndex = '10';
-            newElement.style.transition = 'transform 0.5s ease';
+        puzzleParent.appendChild(newElement);
 
-            document.body.appendChild(newElement);
-
-            requestAnimationFrame(() => {
-                newElement.style.transform = `translate(${xTranslate}px, ${yTranslate}px)`;
-            });
-
-        }
+        requestAnimationFrame(() => {
+            newElement.style.transform = `translate(${xTranslate}px, ${yTranslate}px)`;
+        });
     }
 
     function createCoverDiv(foundSolution: ConnectionsSolutionObject, swapNodes: HTMLElement[], puzzleSelector: HTMLElement | null, solutionsNumber: number) {
 
-        console.log("CREATING COVER DIV:", solutionsNumber);
+        //console.log("CREATING COVER DIV:", solutionsNumber);
 
         const newElement = document.createElement('div');
         const titleElement = document.createElement('h3');
-        titleElement.className = 'text-primary text-3xl text-center font-display';
+        titleElement.className = 'text-primary text-xl md:text-3xl text-center font-display';
         titleElement.textContent = foundSolution.connections_object.category;
         newElement.appendChild(titleElement);
 
         const pElement = document.createElement('p');
-        pElement.className = 'text-primary text-lg text-center font-(family-name: --font-body) font-medium';
+        pElement.className = 'text-primary text-sm md:text-lg text-center font-(family-name: --font-body) font-medium';
         pElement.textContent = foundSolution.connections_object.explanation.replace("%replace%", `${foundSolution.connections_object.value}`);
         newElement.appendChild(pElement);
 
         const namesElement = document.createElement('p');
-        namesElement.className = 'text-primary text-lg text-center font-(family-name: --font-body) font-semibold';
+        namesElement.className = 'text-primary text-sm md:text-lg text-center font-(family-name: --font-body) font-semibold';
         namesElement.textContent = `${foundSolution.name_sequence.join(", ")}`;
         newElement.appendChild(namesElement);
 
@@ -383,7 +408,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         newElement.style.zIndex = '1000';
         newElement.style.backgroundColor = `var(${solutionsNumber == 0 ? '--connection-solution-one' : solutionsNumber == 1 ? '--connection-solution-two' : solutionsNumber == 2 ? '--connection-solution-three' : '--connection-solution-four'})`
 
-        console.log(newElement);
+        //console.log(newElement);
 
         setTimeout(() => {
             puzzleSelector?.appendChild(newElement);
@@ -458,9 +483,6 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                 swapNodes.push(puzzleSelector.children[i * 4] as HTMLElement);
                 createCoverDiv(solutions[i], swapNodes, puzzleSelector, i)
             }
-            else {
-                console.log("PUZZLE SELECTOR NULL")
-            }
         }
     }
 
@@ -482,73 +504,82 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
 
 
     return (
-        <div
-            className={`flex flex-col  justify-center md:space-y-8 space-y-2 transition-opacity duration-500 ${fadeInGameProp ? 'opacity-100' : 'opacity-0'
-                } md:px-8 px-4 max-w-7xl`}
-        >
-            <p className="mb-6 font-medium text-lg text-(--button-primary) self-center">Create four groups of four!</p>
-            <div id="puzzle-parent" className="grid grid-cols-4 gap-4 justify-center items-center relative transition-all duration-2000">
 
-                {coasterNames.map((coaster_object, index) => (
-                    <button
-                        key={index}
-                        id={`puzzle-button-${index}`}
-                        onClick={() => handleItemClick(coaster_object.name)}
-                        className={`${selectedItems.includes(coaster_object.name) ? 'bg-(--card-selected)' : 'bg-(--card-foreground)'}
-    text-gray-800 font-normal text-sm md:text-xl text-center font-display 
-    py-8 px-2 rounded-lg hover:bg-(--card-hover) transition-colors duration-500
-    cursor-pointer justify-center items-center flex flex-col h-24 md:h-48`}
-                    >
-                        <img className="md:w-32 md:h-24 w-20 h-12 object-cover mb-2 rounded-sm" src={coaster_object.imageURL} />
-                        <p style={{ fontSize: 'clamp(0.35rem, 2vw, 1rem)' }} className="max-w-3/4 text-center leading-tight">{coaster_object.name}</p>
-                    </button>
+        <>
+            {gameError && <div><h1 className="text-xl md:text-2xl font-display">Oh no! Something broke!😭</h1></div>}
+            {!gameError && 
+                <div
+                    className={`flex flex-col justify-center items-center mt-16 md:space-y-8 space-y-2 transition-opacity duration-500 ${fadeInGameProp ? 'opacity-100' : 'opacity-0'
+                        } md:px-8 px-4 max-w-7xl`}
+                >
+                    <p className="mb-6 font-medium text-lg text-(--button-primary) self-center">Create four groups of four!</p>
+                    <div className="w-full md:overflow-visible overflow-auto max-h-[50vh] max-w-[90vw] md:max-w-full md:max-h-full">
+                        <div id="puzzle-parent" className="grid grid-cols-4 gap-4 w-128 justify-center items-center relative transition-all duration-2000 md:w-full">
+
+                            {coasterNames.map((coaster_object, index) => (
+                                <button
+                                    key={index}
+                                    id={`puzzle-button-${index}`}
+                                    onClick={() => handleItemClick(coaster_object.name)}
+                                    className={`${selectedItems.includes(coaster_object.name) ? 'bg-(--card-selected)' : 'bg-(--card-foreground)'}
+                text-gray-800 font-normal text-sm md:text-xl text-center font-display 
+                py-4 md:py-8 px-2 rounded-lg hover:bg-(--card-hover) transition-colors duration-500
+                cursor-pointer justify-center items-center flex flex-col h-32 md:h-48`}
+                                    title={`Manufacturer: ${coaster_object.manufacturer}\nOpened In: ${coaster_object.opened_year}\nPark: ${coaster_object.park_name}\nCountry: ${coaster_object.country.toUpperCase()}\nMaterial Type: ${coaster_object.material_type}\nRestraint Type: ${coaster_object.restraint_type}\nSeating Type: ${coaster_object.seating_type}\nLaunch Types: ${coaster_object.launch_types.join(", ")}\nInversions: ${coaster_object.inversions}\nMax Height: ${coaster_object.height}m\nTotal Length: ${coaster_object.length}m\nTop Speed: ${coaster_object.speed}km/h`}
+                                >
+                                    <img className="md:w-32 md:h-24 w-24 h-16 object-cover mb-2 rounded-sm" src={coaster_object.imageURL} />
+                                    <p style={{ fontSize: 'clamp(0.35rem, 2vw, 1rem)' }} className="max-w-3/4 text-center leading-tight">{coaster_object.name}</p>
+                                </button>
 
 
-                ))}
-            </div>
-            <div className="flex flex-col gap-4 relative">
-                <div className={`flex flex-row gap-4 w-full justify-evenly items-center absolute bg-(--background) h-full ${puzzleFinished ? 'z-15' : '-z-1'} ${puzzleFinished ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
-                    <div className="flex flex-col items-center justify-center gap-2">
-                        <h3 className='font-(family-name: --font-body) font-semibold text-2xl'>Mistakes Made:</h3>
-                        <p className='font-display font-normal text-8xl ml-4 align-baseline'>{5 - mistakesRemaining}</p>
-                    </div>
-                    <div className="flex flex-col items-center justify-center gap-2">
-                        <h3 className='font-(family-name: --font-body) font-semibold text-2xl'>Hints Used:</h3>
-                        <p className='font-display font-normal text-8xl ml-4 align-baseline'>{countHintsUsed()}</p>
-                    </div>
-                </div>
-                <div className="flex md:flex-col flex-row gap-4 w-full justify-between">
-                    <div className="flex flex-row items-center justify-between self-center ">
-                        <p className="text-sm md:text-lg font-medium pe-4 text-primary">Mistakes Remaining:</p>
-                        {Array.from({ length: mistakesRemaining }).map((_, index) => (
-                            <div key={index} className="rounded-full md:w-4 w-2 md:h-4 h-2 bg-(--button-primary) mx-1"></div>
-                        ))}
-                    </div>
-                    <Button disabled={selectedItems.length != 4} onClick={() => handleSubmit()}> Submit </Button>
-                </div>
-                <div className="flex flex-row gap-2 md:mt-4 md:gap-4 min-h-24">
-                    {getRemainingHints().slice(0, 3).map((solution, index) => (
-                        <div key={index} className="flex flex-col w-full justify-center items-center gap-2 md:gap-4">
-
-                            <p className={`text-sm md:text-xl text-primary font-medium font-display ${[revealHint1, revealHint2, revealHint3][index] ? 'opacity-100' : 'opacity-0'} transition-all duration-200`}>
-                                {solution.connections_object.category}
-                            </p>
-
-                            <Button
-                                onClick={() => {
-                                    if (index === 0) setRevealHint1(true);
-                                    if (index === 1) setRevealHint2(true);
-                                    if (index === 2) setRevealHint3(true);
-                                }}
-                                disabled={mistakesRemaining >= (4 - index) || [revealHint1, revealHint2, revealHint3][index]}
-                            >
-                                Reveal Hint
-                            </Button>
+                            ))}
                         </div>
-                    ))}
-                </div>
-            </div>
+                    </div>
+                    <div className="flex flex-col gap-4 relative">
+                        <div className={`flex flex-row gap-4 w-full justify-evenly items-center absolute bg-(--background) h-full ${puzzleFinished ? 'z-15' : '-z-1'} ${puzzleFinished ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
+                            <div className="flex flex-col items-center justify-center gap-2">
+                                <h3 className='font-(family-name: --font-body) font-semibold text-2xl'>Mistakes Made:</h3>
+                                <p className='font-display font-normal text-8xl ml-4 align-baseline'>{5 - mistakesRemaining}</p>
+                            </div>
+                            <div className="flex flex-col items-center justify-center gap-2">
+                                <h3 className='font-(family-name: --font-body) font-semibold text-2xl'>Hints Used:</h3>
+                                <p className='font-display font-normal text-8xl ml-4 align-baseline'>{countHintsUsed()}</p>
+                            </div>
+                        </div>
+                        <div className="flex md:flex-col flex-row gap-4 w-full justify-between">
+                            <div className="flex flex-row items-center justify-between self-center ">
+                                <p className="text-sm md:text-lg font-medium pe-4 text-primary">Mistakes Remaining:</p>
+                                {Array.from({ length: mistakesRemaining }).map((_, index) => (
+                                    <div key={index} className="rounded-full md:w-4 w-2 md:h-4 h-2 bg-(--button-primary) mx-1"></div>
+                                ))}
+                            </div>
+                            <Button disabled={selectedItems.length != 4} onClick={() => handleSubmit()}> Submit </Button>
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-2 md:mt-4 md:gap-4 min-h-24 pb-4">
+                            {getRemainingHints().slice(0, 3).map((solution, index) => (
+                                <div key={index} className="flex md:flex-col flex-row-reverse w-full justify-between md:justify-center items-center gap-2 md:gap-4">
 
-        </div>
+                                    <p className={`text-sm md:text-xl text-primary font-medium font-display ${[revealHint1, revealHint2, revealHint3][index] ? 'opacity-100' : 'opacity-0'} transition-all duration-200`}>
+                                        {solution.connections_object.category}
+                                    </p>
+
+                                    <Button
+                                        onClick={() => {
+                                            if (index === 0) setRevealHint1(true);
+                                            if (index === 1) setRevealHint2(true);
+                                            if (index === 2) setRevealHint3(true);
+                                        }}
+                                        disabled={mistakesRemaining >= (4 - index) || [revealHint1, revealHint2, revealHint3][index]}
+                                    >
+                                        Reveal Hint
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+            }
+        </>
     )
 }
