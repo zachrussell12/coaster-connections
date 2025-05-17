@@ -9,7 +9,7 @@ export default function Button({onClick, disabled = false, children}: DefaultBut
         <button
             onClick={onClick}
             disabled={disabled}
-            className={` self-center bg-(--button-primary) hover:bg-(--button-hover) transition-all duration-200 text-white font-semibold py-2 px-16 rounded-4xl cursor-pointer ${!disabled ? 'opacity-100' : 'opacity-50'} ${!disabled ? ' hover:bg-(--button-hover)' : ''} ${!disabled ? 'cursor-pointer' : 'cursor-auto'}`}
+            className={`self-center bg-(--button-primary) md:text-lg text-sm transition-all duration-200 text-white font-semibold py-2 md:px-16 px-4 rounded-4xl ${!disabled ? 'opacity-100' : 'opacity-50'} ${!disabled ? ' hover:bg-(--button-hover)' : ''} ${!disabled ? 'cursor-pointer' : 'cursor-default'}`}
         >
             {children}
         </button>

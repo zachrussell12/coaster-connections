@@ -5,15 +5,15 @@
   --font-display: "Russo One", sans-serif;
   --font-body: "Inter", sans-serif;
   --primary: #061411;
-  --card-foreground: #f5fffe;
+  --card-foreground: #baffed;
   --card-hover: #73ffda;
-  --card-selected: #69e1ff;
+  --card-selected: #00f2b3;
   --button-primary: #195445;
   --button-hover: #27856d;
-  --background: #baffed;
+  --background: #e6fffc;
   --connection-solution-one: #c685ff;
   --connection-solution-two: #44d491;
   --connection-solution-three: #ffdc59;
-  --connection-solution-four: #ffa3f6;
+  --connection-solution-four: #7dadff;
 
 }

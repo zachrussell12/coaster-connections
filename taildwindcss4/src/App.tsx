@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import logo from './assets/images/coasterconnections_logo.webp'
 import GameBoard from './components/GameBoard';
@@ -9,6 +9,27 @@ function App() {
   const [gameStarted, setGameStarted] = useState<boolean>(false);
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [fadeInGame, setFadeInGame] = useState<boolean>(false);
+  const [continueGame, setContinueGame] = useState<boolean>(false);
+  const [gameComplete, setGameComplete] = useState<boolean>(false);
+
+  useEffect(() => {
+    const today = new Date().toLocaleDateString('en-CA');
+    const puzzleState = localStorage.getItem("coasterPuzzleState");
+
+    if(puzzleState){
+      const parsedState = JSON.parse(puzzleState);
+
+      if(parsedState.date === today){
+        if(parsedState.solutionsSolved.length > 0 && parsedState.solutionsSolved.length < 3){
+          setContinueGame(true);
+        }
+        else if(parsedState.solutionsSolved.length == 4){
+          setGameComplete(true);
+        }
+      }
+    }
+
+  }, [])
 
   return (
     <>
@@ -39,7 +60,7 @@ function App() {
                 }, 500);
               }}
             >
-              Play
+              {continueGame ? 'Continue' : gameComplete ? 'Review Solution' : 'Play'}
             </Button>
             <p className="mt-4 text-gray-600">{new Date().toDateString()}</p>
           </div>

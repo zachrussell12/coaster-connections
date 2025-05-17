@@ -15,3 +15,10 @@
 - **Decision 5:** Updated various functions to handle real data from the backend to make the game work properly
 - **Decision 6:** Began working on animation that is played when a user gets a connection group correct.
 - **Decision 7:** Fixed syntax on this file and changed the filename.
+
+# May 16th, 2025
+
+- **Decision 1:** Finished animation for when a player makes a connection
+- **Decision 2:** Set up localStorage so player can resume where they left off or revisit a puzzle they already solved.
+- **Decision 3:** Added a "summary" type of overlay at the bottom for when the puzzle is solved.
+- **Decision 4:** Adjusted button text on landing to reflect the state of the puzzle (not started, partially finished, and compelted).
