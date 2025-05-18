@@ -52,6 +52,7 @@ interface GameStateInterface {
     revealHint1: boolean,
     revealHint2: boolean,
     revealHint3: boolean,
+    puzzleFinished: boolean,
 }
 
 const fetchTodaysPuzzle = async (): Promise<Puzzle | null> => {
@@ -105,7 +106,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                 setCoasterNames(shuffledNames);
                 setConnectionSolutions(puzzle?.correct_connections);
             }
-            else{
+            else {
                 setGameError(true);
             }
         }
@@ -132,6 +133,8 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                 setRevealHint3(parsedState.revealHint3);
                 setSolutionsFound(parsedState.solutionsSolved.length);
                 setDiscoveredSolutions(parsedState.solutionsSolved);
+                setPuzzleFinished(parsedState.puzzleFinished);
+                console.log(parsedState);
                 return;
             }
         }
@@ -148,10 +151,6 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         }
 
         //console.log(discoveredSolutions);
-
-        if (discoveredSolutions.length == 4) {
-            setPuzzleFinished(true);
-        }
 
     }, [coasterNames, discoveredSolutions, coversLoaded, puzzleFinished])
 
@@ -180,12 +179,16 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         const solution = checkIfGroupCorrect(selectedItems);
         if (solution) {
             setSolutionsFound((prev) => prev + 1);
+            setDiscoveredSolutions([...discoveredSolutions, solution])
             animationDriver(selectedItems, solution);
             setSelectedItems([]);
-            updatePuzzleStorageState(solution, mistakesRemaining)
 
             if (solutionsFound == 3) {
                 setPuzzleFinished(true);
+                updatePuzzleStorageState(solution, mistakesRemaining, true)
+            }
+            else{
+                updatePuzzleStorageState(solution, mistakesRemaining, false)
             }
 
         }
@@ -203,10 +206,18 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
 
             setTimeout(() => {
                 setSelectedItems([]);
-                updatePuzzleStorageState(solution, mistakesRemaining - 1);
+                updatePuzzleStorageState(solution, mistakesRemaining - 1, false);
             }, 400);
 
-            setMistakesRemaining(prev => Math.max(prev - 1, 0));
+            setMistakesRemaining(prev => {
+                const newVal = Math.max(prev - 1, 0);
+
+                if (newVal == 0) {
+                    triggerPlayerLoss();
+                }
+
+                return newVal;
+            });
         }
     }
 
@@ -415,7 +426,9 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         }, 500)
     }
 
-    async function updatePuzzleStorageState(solution: ConnectionsSolutionObject | null, mistakesMade: number,) {
+    async function updatePuzzleStorageState(solution: ConnectionsSolutionObject | null, mistakesMade: number, puzzleState: boolean) {
+
+        console.log("UPDATE PUZZLE STATE");
 
         const today = new Date().toLocaleDateString('en-CA');
         let prevPuzzleState = await localStorage.getItem('coasterPuzzleState');
@@ -438,6 +451,10 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             solutionsSolved.push(solution);
         }
 
+        if(puzzleState){
+            solutionsSolved = connectionSolutions;
+        }
+
         const gameState: GameStateInterface = {
             date: today,
             solutionsSolved,
@@ -446,7 +463,8 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             mistakesRemaining: mistakesMade,
             revealHint1,
             revealHint2,
-            revealHint3
+            revealHint3,
+            puzzleFinished: puzzleState,
         }
 
         localStorage.setItem("coasterPuzzleState", JSON.stringify(gameState))
@@ -473,11 +491,11 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         return currCoasterNames
     }
 
-    async function assembleFinishedPuzzle(solutions: ConnectionsSolutionObject[]) {
+    async function assembleFinishedPuzzle(solutions: ConnectionsSolutionObject[], startingPos: number = 0) {
         const puzzleSelector = document.getElementById("puzzle-parent");
         const swapNodes: HTMLElement[] = []
 
-        for (var i = 0; i < solutions.length; i++) {
+        for (var i = startingPos; i < solutions.length; i++) {
             swapNodes.pop();
             if (puzzleSelector) {
                 swapNodes.push(puzzleSelector.children[i * 4] as HTMLElement);
@@ -502,17 +520,61 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         return usedHints
     }
 
+    function triggerPlayerLoss() {
+        const puzzleSelector = document.getElementById("puzzle-parent");
+        if (!puzzleSelector) return;
+
+        const remainingSolutions = connectionSolutions.filter(
+            sol => !discoveredSolutions.some(ds => JSON.stringify(ds) === JSON.stringify(sol))
+        );
+
+        remainingSolutions.forEach((solution, solutionIndex) => {
+            const targetRowStart = (discoveredSolutions.length + solutionIndex) * 4;
+            console.log(targetRowStart);
+            const swapNodes: HTMLElement[] = [];
+
+            for (let i = 0; i < 4; i++) {
+                const node = puzzleSelector.children[targetRowStart + i] as HTMLElement;
+                swapNodes.push(node);
+            }
+
+            solution.name_sequence.forEach((coasterName, i) => {
+                const currentNode = Array.from(puzzleSelector.children).find(
+                    child => child.textContent?.trim() === coasterName
+                ) as HTMLElement;
+
+                if (currentNode && swapNodes[i]) {
+                    swapAnimation(currentNode, swapNodes[i]);
+                }
+            });
+
+            setTimeout(() => {
+                createCoverDiv(solution, swapNodes, puzzleSelector, discoveredSolutions.length + solutionIndex);
+            }, 1250 * solutionIndex);
+        });
+
+        setTimeout(() => {
+            setPuzzleFinished(true);
+            updatePuzzleStorageState(null, 0, true);
+        }, 5000);
+    }
+
+
+
 
     return (
 
         <>
             {gameError && <div><h1 className="text-xl md:text-2xl font-display">Oh no! Something broke!😭</h1></div>}
-            {!gameError && 
+            {!gameError &&
                 <div
                     className={`flex flex-col justify-center items-center mt-16 md:space-y-8 space-y-2 transition-opacity duration-500 ${fadeInGameProp ? 'opacity-100' : 'opacity-0'
                         } md:px-8 px-4 max-w-7xl`}
                 >
-                    <p className="mb-6 font-medium text-lg text-(--button-primary) self-center">Create four groups of four!</p>
+                    <div className="mb-0 relative">
+                        <p className={`mb-6 font-medium text-lg text-(--button-primary) self-center`}>Create four groups of four!</p>
+                        <p className={`mb-6 font-bold text-lg md:text-2xl text-(--button-primary) self-center absolute bg-(--background) z-15 top-0 w-full transition-opacity duration-200 text-center ${puzzleFinished ? 'opacity-100' : 'opacity-0'}`}>{mistakesRemaining == 0 ? "You Lost!" : "You Won!"}</p>
+                    </div>
                     <div className="w-full md:overflow-visible overflow-auto max-h-[50vh] max-w-[90vw] md:max-w-full md:max-h-full">
                         <div id="puzzle-parent" className="grid grid-cols-4 gap-4 w-128 justify-center items-center relative transition-all duration-2000 md:w-full">
 
@@ -536,14 +598,14 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                         </div>
                     </div>
                     <div className="flex flex-col gap-4 relative justify-center items-center">
-                        <div className={`flex flex-row gap-4 md:w-128 w-full justify-evenly items-cente absolute bg-(--background) h-full ${puzzleFinished ? 'z-15' : '-z-1'} ${puzzleFinished ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
+                        <div className={`flex flex-row gap-4 md:w-256 w-full justify-evenly items-center absolute bg-(--background) h-full ${puzzleFinished ? 'z-15' : '-z-1'} ${puzzleFinished ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
                             <div className="flex flex-col items-center justify-center gap-2">
-                                <h3 className='font-(family-name: --font-body) font-semibold text-lg md:text-2xl'>Mistakes Made:</h3>
-                                <p className='font-display font-normal text-2xl md:text-8xl ml-4 align-baseline'>{5 - mistakesRemaining}</p>
+                                <h3 className='font-(family-name: --font-body) font-semibold text-lg md:text-2xl text-(--button-primary) text-center'>Mistakes Made:</h3>
+                                <p className='font-display font-normal text-2xl md:text-8xl align-baseline text-(--button-primary) text-center'>{5 - mistakesRemaining}</p>
                             </div>
                             <div className="flex flex-col items-center justify-center gap-2">
-                                <h3 className='font-(family-name: --font-body) font-semibold text-lg md:text-2xl'>Hints Used:</h3>
-                                <p className='font-display font-normal text-2xl md:text-8xl ml-4 align-baseline'>{countHintsUsed()}</p>
+                                <h3 className='font-(family-name: --font-body) font-semibold text-lg md:text-2xl text-(--button-primary) text-center'>Hints Used:</h3>
+                                <p className='font-display font-normal text-2xl md:text-8xl align-baseline text-(--button-primary) text-center'>{countHintsUsed()}</p>
                             </div>
                         </div>
                         <div className="flex md:flex-col flex-row gap-4 w-full justify-between">

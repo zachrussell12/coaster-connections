@@ -40,3 +40,9 @@
 - **Decision 3:** Added link to repository in the top left.
 - **Decision 4:** Added README to base of repo.
 - **Decision 5:** Removed README from frontend folder.
+
+# May 17th, 2025 (Even Later)
+
+- **Decision 1:** Added the losing animation because I completely forgot it.
+- **Decision 2:** Updated discoveredSolutions state when the player finds a solution because I forgot it.
+- **Decision 3:** Added You Win! or You Lose! text upon the game finishing.
