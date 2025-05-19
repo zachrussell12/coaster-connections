@@ -224,7 +224,7 @@ export const syncCoasterData = onSchedule(
 
 export const generateDailyPuzzle = onSchedule(
     {
-        schedule: '0 8 * * *',
+        schedule: '0 6 * * *',
         timeZone: 'America/New_York',
         secrets: [CAPTAINCOASTER_API_KEY],
     },

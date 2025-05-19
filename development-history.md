@@ -46,3 +46,8 @@
 - **Decision 1:** Added the losing animation because I completely forgot it.
 - **Decision 2:** Updated discoveredSolutions state when the player finds a solution because I forgot it.
 - **Decision 3:** Added You Win! or You Lose! text upon the game finishing.
+
+# May 18th, 2025
+
+- **Decision 1:** Changed backend to generate puzzle at 6am instead of 8am.
+- **Decision 2:** Changed frontend logic to check if its before 6am instead of 8am.

@@ -58,10 +58,10 @@ interface GameStateInterface {
 const fetchTodaysPuzzle = async (): Promise<Puzzle | null> => {
     try {
         const now = new Date();
-        const isBefore8AM = now.getHours() < 8;
+        const isBefore6AM = now.getHours() < 6;
 
         const targetDate = new Date(now);
-        if (isBefore8AM) {
+        if (isBefore6AM) {
             targetDate.setDate(now.getDate() - 1);
         }
 
@@ -118,13 +118,13 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             const today = new Date();
             const todayStr = today.toLocaleDateString('en-CA');
 
-            const isBefore8AM = today.getHours() < 8;
+            const isBefore6AM = today.getHours() < 6;
 
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
             const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
-            if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore8AM)) {
+            if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore6AM)) {
                 setCoasterNames(sortCoasterNames(parsedState.solutionsSolved, parsedState.coasterNames));
                 setConnectionSolutions(parsedState.connectionSolutions);
                 setMistakesRemaining(parsedState.mistakesRemaining);

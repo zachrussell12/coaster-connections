@@ -20,13 +20,13 @@ function App() {
       const today = new Date();
       const todayStr = today.toLocaleDateString('en-CA');
 
-      const isBefore8AM = today.getHours() < 8;
+      const isBefore6AM = today.getHours() < 6;
 
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
-      if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore8AM)) {
+      if (parsedState.date === todayStr || (parsedState.date === yesterdayStr && isBefore6AM)) {
         if (parsedState.solutionsSolved.length > 0 && parsedState.solutionsSolved.length < 3) {
           setContinueGame(true);
         }
