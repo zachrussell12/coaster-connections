@@ -3,6 +3,7 @@ import { WhereFilterOp } from 'firebase-admin/firestore';
 interface ConnectionObject{
     quality: string,
     operator: WhereFilterOp,
+    opposite: WhereFilterOp | string,
     value: Array<string | number>,
     category: string,
     explanation: string,
@@ -110,6 +111,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "material_type",
         operator: "==",
+        opposite: "!=",
         value: ["Wooden", "Steel", "Hybrid"],
         category: "Material Type",
         explanation: "All coasters are %replace% construction."
@@ -117,6 +119,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "manufacturer",
         operator: "==",
+        opposite: "!=",
         value: manufacturers,
         category: "Manufacturer",
         explanation: "All coasters are manufactured by %replace%."
@@ -124,6 +127,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "park_name",
         operator: "==",
+        opposite: "!=",
         value: park_names,
         category: "Park",
         explanation: "All coasters are found in %replace%."
@@ -131,6 +135,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "country",
         operator: "==",
+        opposite: "!=",
         value: countries,
         category: "Country",
         explanation: "All coasters are located in %replace%."
@@ -138,6 +143,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "seating_type",
         operator: "==",
+        opposite: "!=",
         value: seating_types,
         category: "Seating Type",
         explanation: "All coasters have %replace% seating."
@@ -145,6 +151,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "model",
         operator: "==",
+        opposite: "!=",
         value: model_types,
         category: "Model",
         explanation: "All coasters are %replace% models."
@@ -152,6 +159,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "launch_type",
         operator: "array-contains",
+        opposite: "array-does-not-contain",
         value: launch_types,
         category: "Launch Type",
         explanation: "All coasters use a %replace% launch type."
@@ -159,6 +167,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "restraint_type",
         operator: "==",
+        opposite: "!=",
         value: restraint_types,
         category: "Restraint Type",
         explanation: "All coasters use a %replace% restraint type."
@@ -166,6 +175,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "speed",
         operator: "<=",
+        opposite: ">=",
         value: [75, 85],
         category: "Top Speed",
         explanation: "All coasters have a top speed lower than %replace%km/h."
@@ -173,6 +183,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "speed",
         operator: ">=",
+        opposite: "<=",
         value: [115, 125, 135, 150, 160],
         category: "Top Speed",
         explanation: "All coasters have a top speed greater than %replace%km/h."
@@ -180,6 +191,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "height",
         operator: ">=",
+        opposite: "<=",
         value: [65, 90],
         category: "Height",
         explanation: "All coasters have a height greather than %replace% meters."
@@ -187,6 +199,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "height",
         operator: "<=",
+        opposite: ">=",
         value: [10, 25],
         category: "Height",
         explanation: "All coasters have a height less than %replace% meters."
@@ -194,6 +207,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "length",
         operator: ">=",
+        opposite: "<=",
         value: [1250, 1500, 1750],
         category: "Length",
         explanation: "All coasters have a length greater than %replace% meters."
@@ -201,6 +215,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "length",
         operator: "<=",
+        opposite: ">=",
         value: [550, 750],
         category: "Length",
         explanation: "All coasters have a length less than %replace% meters."
@@ -208,6 +223,7 @@ export const connectionTypes : ConnectionObject[] = [
     {
         quality: "inversions",
         operator: "==",
+        opposite: "!=",
         value: [5, 0, 4, 2, 1, 6, 3, 7],
         category: "Inversions",
         explanation: "All coasters have %replace% inversions."

@@ -12,7 +12,7 @@ const db = admin.firestore();
 const API_BASE_URL = 'https://captaincoaster.com';
 const CAPTAINCOASTER_API_KEY = defineSecret('CAPTAINCOASTER_API_KEY');
 
-
+const categoryColors = ["#c685ff", "#44d491", "#ffdc59", "#7dadff"]
 
 async function fetchAllCoasterIds(API_KEY: string): Promise<string[]> {
     let coasters: any[] = [];
@@ -44,9 +44,15 @@ interface LaunchObject {
     name: string
 }
 
+interface ViableCategory {
+    category: ConnectionObject,
+    coasters: QueryDocumentSnapshot[],
+}
+
 interface ConnectionObject {
     quality: string,
     operator: WhereFilterOp,
+    opposite: WhereFilterOp | string,
     value: Array<string | number>,
     category: string,
     explanation: string,
@@ -55,14 +61,17 @@ interface ConnectionObject {
 interface FinalConnectionObject {
     quality: string,
     operator: WhereFilterOp,
+    opposite: WhereFilterOp | string,
     value: string | number,
     category: string,
     explanation: string,
+    categoryColor: string,
 }
 
 interface PuzzleObject {
     coaster_objects: CoasterPuzzleObject[],
     correct_connections: ConnectionsSolutionObject[],
+    puzzle_number: number,
 }
 
 interface CoasterPuzzleObject {
@@ -178,10 +187,63 @@ function capitalize(text: string) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function getRandomConnections(): ConnectionObject[] {
-    const shuffledConnections = [...connectionTypes].sort(() => 0.5 - Math.random())
-    return shuffledConnections.slice(0, 4)
+function getRandomCategory(): ConnectionObject {
+    return connectionTypes[Math.floor(Math.random() * connectionTypes.length)]
 }
+
+async function findViableCoasterSet(
+    currCategory: ConnectionObject,
+    value: string | number,
+    querySet: FinalConnectionObject[],
+    usedCoasters: Set<string>,
+    recursionDepth: number
+): Promise<ViableCategory | null> {
+
+    if (recursionDepth >= 500) {
+        console.warn("Max recursion depth reached. Aborting search.");
+        return null;
+    }
+
+    const snapshot = await db.collection('coasters')
+        .where(currCategory.quality, currCategory.operator, value)
+        .get();
+
+    let availableCoasters = snapshot.docs.filter(doc => !usedCoasters.has(doc.data().name));
+
+    availableCoasters = availableCoasters.filter(doc => {
+        const data = doc.data();
+
+        return querySet.every(category => {
+            const fieldValue = data[category.quality];
+
+            if (category.opposite === "array-does-not-contain") {
+                return !Array.isArray(fieldValue) || !fieldValue.includes(category.value);
+            }
+
+            switch (category.opposite) {
+                case "!=": return fieldValue !== category.value;
+                case "<=": return fieldValue <= category.value;
+                case ">=": return fieldValue >= category.value;
+                case "array-contains": return Array.isArray(fieldValue) && fieldValue.includes(category.value);
+                default: return true;
+            }
+        });
+    });
+
+    if (availableCoasters.length >= 4) {
+        const solution = selectRandomSolutionSet(availableCoasters);
+        return { category: currCategory, coasters: solution };
+    } else {
+        console.log(`${currCategory.category} failed to produce a viable set with recursion depth: ${recursionDepth}`);
+
+        const newCategory = getRandomCategory();
+        const randomValue = newCategory.value[Math.floor(Math.random() * newCategory.value.length)];
+
+        return findViableCoasterSet(newCategory, randomValue, querySet, usedCoasters, recursionDepth + 1);
+    }
+}
+
+
 
 function selectRandomSolutionSet(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>[]): QueryDocumentSnapshot[] {
     const shuffledCoasters = [...snapshot].sort(() => 0.5 - Math.random())
@@ -232,9 +294,79 @@ export const generateDailyPuzzle = onSchedule(
 
         console.log("Creating new puzzle...")
 
-        const connections = getRandomConnections();
-        let puzzle: PuzzleObject = { coaster_objects: [], correct_connections: [] };
+        const numOfPuzzles = (await db.collection('daily_puzzles').count().get()).data().count;
+        let puzzle: PuzzleObject = { coaster_objects: [], correct_connections: [], puzzle_number: numOfPuzzles + 1 };
         let usedCoasters = new Set<string>();
+        let usedCategories: FinalConnectionObject[] = [];
+        let overallAttempts = 0;
+
+        for (var i = 0; i < 4; i++) {
+
+            const category: ConnectionObject = getRandomCategory();
+
+            const randomConnectionValue = category.value[Math.floor(Math.random() * category.value.length)];
+
+            const viableCat: ViableCategory | null = await findViableCoasterSet(category, randomConnectionValue, usedCategories, usedCoasters, 0);
+
+            if (viableCat) {
+
+                const coastersSequenceSolution: string[] = [];
+
+                viableCat.coasters.forEach(coaster => {
+                    const data = coaster.data();
+                    puzzle.coaster_objects.push({ name: data.name, imageURL: data.image, country: data.country, height: data.height, inversions: data.inversions, launch_types: data.launch_type, length: data.length, manufacturer: data.manufacturer, material_type: data.material_type, model: data.model, opened_year: data.opened_year, park_name: data.park_name, restraint_type: data.restraint_type, seating_type: data.seating_type, speed: data.speed, });
+                    usedCoasters.add(data.name);
+                    coastersSequenceSolution.push(data.name);
+                });
+
+                const finalConnectionObject: FinalConnectionObject = {
+                    quality: viableCat.category.quality,
+                    operator: viableCat.category.operator,
+                    opposite: viableCat.category.opposite,
+                    value: randomConnectionValue,
+                    category: viableCat.category.category,
+                    explanation: viableCat.category.explanation,
+                    categoryColor: categoryColors[i],
+                };
+
+                usedCategories.push(finalConnectionObject);
+
+                const connection_solution: ConnectionsSolutionObject = {
+                    name_sequence: coastersSequenceSolution,
+                    connections_object: finalConnectionObject,
+                };
+
+                puzzle.correct_connections.push(connection_solution);
+            }
+            else {
+                if (overallAttempts >= 50) {
+                    break;
+                }
+                else {
+                    i--;
+                }
+            }
+
+        }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+
+        const docRef = db.collection('daily_puzzles').doc(timestamp);
+
+        await docRef.create(puzzle);
+
+        console.log("Created new daily puzzle for: ", timestamp)
+
+    }
+)
+
+
+/* OLD PUZZLE GENERATION METHOD
+
+const connections = getRandomConnections();
+        let puzzle: PuzzleObject = { coaster_objects: [], correct_connections: [], puzzle_number: numOfPuzzles+1};
+        let usedCoasters = new Set<string>();
+        let i = 0;
 
         for (const connectionPuzzle of connections) {
             let solution: QueryDocumentSnapshot[] = [];
@@ -282,6 +414,7 @@ export const generateDailyPuzzle = onSchedule(
                 value: randomConnectionValue,
                 category: connectionPuzzle.category,
                 explanation: connectionPuzzle.explanation,
+                categoryColor: categoryColors[i],
             };
 
             const connection_solution: ConnectionsSolutionObject = {
@@ -290,15 +423,6 @@ export const generateDailyPuzzle = onSchedule(
             };
 
             puzzle.correct_connections.push(connection_solution);
+            i++;
         }
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-
-        const docRef = db.collection('daily_puzzles').doc(timestamp);
-
-        await docRef.create(puzzle);
-
-        console.log("Created new daily puzzle for: ", timestamp)
-
-    }
-)
+*/

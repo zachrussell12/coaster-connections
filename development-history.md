@@ -51,3 +51,10 @@
 
 - **Decision 1:** Changed backend to generate puzzle at 6am instead of 8am.
 - **Decision 2:** Changed frontend logic to check if its before 6am instead of 8am.
+
+#May 19th, 2025
+
+- **Decision 1:** Updated backend logic to omit any overlap of the categories. Too much overlap made it impossible to determine what the correct sequence of many different possible combinations was.
+- **Decision 2:** Tied specific colors to each connection category
+- **Decision 3:** Added a copyable result after the game is over so players can share their results, what order the solved the puzzle in, and other details
+- **Decision 4:** Fixed a bug where the order of the connections the player found wasnt being preserved and was being overwritten

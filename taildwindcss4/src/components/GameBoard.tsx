@@ -10,6 +10,7 @@ interface GameProps {
 interface Puzzle {
     coaster_objects: CoasterPuzzleObject[],
     correct_connections: ConnectionsSolutionObject[],
+    puzzle_number: number,
 }
 
 interface ConnectionsSolutionObject {
@@ -20,9 +21,11 @@ interface ConnectionsSolutionObject {
 interface FinalConnectionObject {
     quality: string,
     operator: WhereFilterOp,
+    opposite: WhereFilterOp | string,
     value: string | number,
     category: string,
     explanation: string,
+    categoryColor: string,
 }
 
 interface CoasterPuzzleObject {
@@ -53,6 +56,7 @@ interface GameStateInterface {
     revealHint2: boolean,
     revealHint3: boolean,
     puzzleFinished: boolean,
+    copyableResult: string,
 }
 
 const fetchTodaysPuzzle = async (): Promise<Puzzle | null> => {
@@ -96,6 +100,8 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
     const [revealHint3, setRevealHint3] = useState<boolean>(false);
     const [puzzleFinished, setPuzzleFinished] = useState<boolean>(false);
     const [gameError, setGameError] = useState<boolean>(false);
+    const [copyableResult, setCopyableResult] = useState<string>("");
+    const [copiedTextFlag, setCopiedTextFlag] = useState<boolean>(false);
 
     useEffect(() => {
 
@@ -105,6 +111,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                 const shuffledNames = [...puzzle.coaster_objects].sort(() => 0.5 - Math.random())
                 setCoasterNames(shuffledNames);
                 setConnectionSolutions(puzzle?.correct_connections);
+                setCopyableResult(`Coaster Connections #${puzzle.puzzle_number}\n`)
             }
             else {
                 setGameError(true);
@@ -132,9 +139,10 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                 setRevealHint2(parsedState.revealHint2);
                 setRevealHint3(parsedState.revealHint3);
                 setSolutionsFound(parsedState.solutionsSolved.length);
+
                 setDiscoveredSolutions(parsedState.solutionsSolved);
                 setPuzzleFinished(parsedState.puzzleFinished);
-                console.log(parsedState);
+                setCopyableResult(parsedState.copyableResult);
                 return;
             }
         }
@@ -183,14 +191,34 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             animationDriver(selectedItems, solution);
             setSelectedItems([]);
 
-            if (solutionsFound == 3) {
-                setPuzzleFinished(true);
-                updatePuzzleStorageState(solution, mistakesRemaining, true)
-            }
-            else{
-                updatePuzzleStorageState(solution, mistakesRemaining, false)
+            let copyString = copyableResult;
+
+            switch (solution.connections_object.categoryColor) {
+                case "#c685ff":
+                    copyString += '🟪🟪🟪🟪\n';
+                    break;
+                case "#44d491":
+                    copyString += '🟩🟩🟩🟩\n';
+                    break;
+                case "#ffdc59":
+                    copyString += '🟨🟨🟨🟨\n';
+                    break;
+                default:
+                    copyString += '🟦🟦🟦🟦\n';
+                    break;
             }
 
+
+            if (solutionsFound == 3) {
+                setPuzzleFinished(true);
+                copyString += `Mistakes: ${5 - mistakesRemaining} | Hints Used: ${countHintsUsed()}`
+                updatePuzzleStorageState(solution, mistakesRemaining, true, copyString)
+            }
+            else {
+                updatePuzzleStorageState(solution, mistakesRemaining, false, copyString)
+            }
+
+            setCopyableResult(copyString);
         }
         else {
             //console.log("WRONG ANSWER")
@@ -206,7 +234,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
 
             setTimeout(() => {
                 setSelectedItems([]);
-                updatePuzzleStorageState(solution, mistakesRemaining - 1, false);
+                updatePuzzleStorageState(solution, mistakesRemaining - 1, false, copyableResult);
             }, 400);
 
             setMistakesRemaining(prev => {
@@ -309,7 +337,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         //console.log(swapNodes[0].offsetTop)
 
         //Create Cover Div
-        createCoverDiv(foundSolution, swapNodes, puzzleSelector, solutionsFound)
+        createCoverDiv(foundSolution, swapNodes, puzzleSelector)
 
         //Swap HTML Elements
         if (solutionsFound !== 3 || swapNodes.length !== 0) {
@@ -391,7 +419,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         });
     }
 
-    function createCoverDiv(foundSolution: ConnectionsSolutionObject, swapNodes: HTMLElement[], puzzleSelector: HTMLElement | null, solutionsNumber: number) {
+    function createCoverDiv(foundSolution: ConnectionsSolutionObject, swapNodes: HTMLElement[], puzzleSelector: HTMLElement | null) {
 
         //console.log("CREATING COVER DIV:", solutionsNumber);
 
@@ -403,7 +431,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
 
         const pElement = document.createElement('p');
         pElement.className = 'text-primary text-sm md:text-lg text-center font-(family-name: --font-body) font-medium';
-        pElement.textContent = foundSolution.connections_object.explanation.replace("%replace%", `${foundSolution.connections_object.value}`);
+        pElement.textContent = foundSolution.connections_object.explanation.replace("%replace%", `${foundSolution.connections_object.value.toString().toUpperCase()}`);
         newElement.appendChild(pElement);
 
         const namesElement = document.createElement('p');
@@ -417,7 +445,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         newElement.style.top = `${swapNodes[0].offsetTop}px`;
         newElement.style.height = `${swapNodes[0].getBoundingClientRect().height}px`
         newElement.style.zIndex = '1000';
-        newElement.style.backgroundColor = `var(${solutionsNumber == 0 ? '--connection-solution-one' : solutionsNumber == 1 ? '--connection-solution-two' : solutionsNumber == 2 ? '--connection-solution-three' : '--connection-solution-four'})`
+        newElement.style.backgroundColor = `${foundSolution.connections_object.categoryColor}`
 
         //console.log(newElement);
 
@@ -426,9 +454,9 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         }, 500)
     }
 
-    async function updatePuzzleStorageState(solution: ConnectionsSolutionObject | null, mistakesMade: number, puzzleState: boolean) {
+    async function updatePuzzleStorageState(solution: ConnectionsSolutionObject | null, mistakesMade: number, puzzleState: boolean, copyString: string,) {
 
-        console.log("UPDATE PUZZLE STATE");
+        //console.log("UPDATE PUZZLE STATE");
 
         const today = new Date().toLocaleDateString('en-CA');
         let prevPuzzleState = await localStorage.getItem('coasterPuzzleState');
@@ -447,12 +475,16 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             }
         }
 
-        if (!solutionsSolved.some(s => JSON.stringify(s) == JSON.stringify(solution)) && solution) {
+        if (solution && !solutionsSolved.find(s => s.connections_object.category === solution.connections_object.category)) {
             solutionsSolved.push(solution);
         }
 
-        if(puzzleState){
-            solutionsSolved = connectionSolutions;
+        if (puzzleState && solutionsSolved.length !== connectionSolutions.length) {
+            connectionSolutions.forEach(solution => {
+                if (!solutionsSolved.find(s => s.connections_object.category === solution.connections_object.category)) {
+                    solutionsSolved.push(solution);
+                }
+            });
         }
 
         const gameState: GameStateInterface = {
@@ -465,6 +497,7 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             revealHint2,
             revealHint3,
             puzzleFinished: puzzleState,
+            copyableResult: copyString,
         }
 
         localStorage.setItem("coasterPuzzleState", JSON.stringify(gameState))
@@ -495,11 +528,13 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
         const puzzleSelector = document.getElementById("puzzle-parent");
         const swapNodes: HTMLElement[] = []
 
+        //console.log(solutions)
+
         for (var i = startingPos; i < solutions.length; i++) {
             swapNodes.pop();
             if (puzzleSelector) {
                 swapNodes.push(puzzleSelector.children[i * 4] as HTMLElement);
-                createCoverDiv(solutions[i], swapNodes, puzzleSelector, i)
+                createCoverDiv(solutions[i], swapNodes, puzzleSelector)
             }
         }
     }
@@ -528,15 +563,19 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             sol => !discoveredSolutions.some(ds => JSON.stringify(ds) === JSON.stringify(sol))
         );
 
+        let copyString = copyableResult;
+
         remainingSolutions.forEach((solution, solutionIndex) => {
             const targetRowStart = (discoveredSolutions.length + solutionIndex) * 4;
-            console.log(targetRowStart);
+            //console.log(targetRowStart);
             const swapNodes: HTMLElement[] = [];
 
             for (let i = 0; i < 4; i++) {
                 const node = puzzleSelector.children[targetRowStart + i] as HTMLElement;
                 swapNodes.push(node);
             }
+
+            copyString += '⬛⬛⬛⬛\n';
 
             solution.name_sequence.forEach((coasterName, i) => {
                 const currentNode = Array.from(puzzleSelector.children).find(
@@ -549,17 +588,30 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
             });
 
             setTimeout(() => {
-                createCoverDiv(solution, swapNodes, puzzleSelector, discoveredSolutions.length + solutionIndex);
+                createCoverDiv(solution, swapNodes, puzzleSelector);
             }, 1250 * solutionIndex);
         });
 
         setTimeout(() => {
             setPuzzleFinished(true);
-            updatePuzzleStorageState(null, 0, true);
+            updatePuzzleStorageState(null, 0, true, copyString);
         }, 5000);
+
+
+        copyString += `Mistakes: 5 | Hints Used: ${countHintsUsed()}`
+
+        setCopyableResult(copyString)
     }
 
+    function copyResult () {
+        if(!copiedTextFlag){
+            navigator.clipboard.writeText(copyableResult)
 
+            setCopiedTextFlag(true);
+
+            setTimeout(() => setCopiedTextFlag(false), 1000);
+        }
+    }
 
 
     return (
@@ -599,6 +651,9 @@ export default function GameBoard({ fadeInGameProp }: GameProps) {
                     </div>
                     <div className="flex flex-col gap-4 relative justify-center items-center">
                         <div className={`flex flex-row gap-4 md:w-256 w-full justify-evenly items-center absolute bg-(--background) h-full ${puzzleFinished ? 'z-15' : '-z-1'} ${puzzleFinished ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}>
+                            <Button onClick={() => { copyResult()}} disabled={copiedTextFlag}>
+                                {copiedTextFlag ? "Copied Result to Clipboard!" :"Copy Result to Clipboard!"}
+                            </Button>
                             <div className="flex flex-col items-center justify-center gap-2">
                                 <h3 className='font-(family-name: --font-body) font-semibold text-lg md:text-2xl text-(--button-primary) text-center'>Mistakes Made:</h3>
                                 <p className='font-display font-normal text-2xl md:text-8xl align-baseline text-(--button-primary) text-center'>{5 - mistakesRemaining}</p>
