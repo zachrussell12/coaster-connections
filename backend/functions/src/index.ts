@@ -46,6 +46,7 @@ interface LaunchObject {
 
 interface ViableCategory {
     category: ConnectionObject,
+    value: string | number,
     coasters: QueryDocumentSnapshot[],
 }
 
@@ -187,9 +188,19 @@ function capitalize(text: string) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-function getRandomCategory(): ConnectionObject {
-    return connectionTypes[Math.floor(Math.random() * connectionTypes.length)]
+function getRandomCategory(usedCategories: FinalConnectionObject[]): ConnectionObject {
+    const remainingCategories = connectionTypes.filter(cat => 
+        !usedCategories.some(used => used.category === cat.category)
+    );
+
+    if (remainingCategories.length === 0) {
+        throw new Error("No remaining categories available.");
+    }
+
+    const randomIndex = Math.floor(Math.random() * remainingCategories.length);
+    return remainingCategories[randomIndex];
 }
+
 
 async function findViableCoasterSet(
     currCategory: ConnectionObject,
@@ -208,10 +219,16 @@ async function findViableCoasterSet(
         .where(currCategory.quality, currCategory.operator, value)
         .get();
 
+    console.log(`Initial snapshot size for category ${currCategory.category}:`, snapshot.size);
+
     let availableCoasters = snapshot.docs.filter(doc => !usedCoasters.has(doc.data().name));
+
+    console.log(`Filtering against ${querySet.length} existing category constraints`);
 
     availableCoasters = availableCoasters.filter(doc => {
         const data = doc.data();
+
+        if (querySet.length === 0) return true;
 
         return querySet.every(category => {
             const fieldValue = data[category.quality];
@@ -231,19 +248,18 @@ async function findViableCoasterSet(
     });
 
     if (availableCoasters.length >= 4) {
+        console.log("FOUND VIABLE NUMBER OF COASTERS FOR CATEGORY")
         const solution = selectRandomSolutionSet(availableCoasters);
-        return { category: currCategory, coasters: solution };
+        return { category: currCategory, value, coasters: solution };
     } else {
         console.log(`${currCategory.category} failed to produce a viable set with recursion depth: ${recursionDepth}`);
 
-        const newCategory = getRandomCategory();
+        const newCategory = getRandomCategory(querySet);
         const randomValue = newCategory.value[Math.floor(Math.random() * newCategory.value.length)];
 
         return findViableCoasterSet(newCategory, randomValue, querySet, usedCoasters, recursionDepth + 1);
     }
 }
-
-
 
 function selectRandomSolutionSet(snapshot: QueryDocumentSnapshot<DocumentData, DocumentData>[]): QueryDocumentSnapshot[] {
     const shuffledCoasters = [...snapshot].sort(() => 0.5 - Math.random())
@@ -302,7 +318,7 @@ export const generateDailyPuzzle = onSchedule(
 
         for (var i = 0; i < 4; i++) {
 
-            const category: ConnectionObject = getRandomCategory();
+            const category: ConnectionObject = getRandomCategory(usedCategories);
 
             const randomConnectionValue = category.value[Math.floor(Math.random() * category.value.length)];
 
@@ -323,7 +339,7 @@ export const generateDailyPuzzle = onSchedule(
                     quality: viableCat.category.quality,
                     operator: viableCat.category.operator,
                     opposite: viableCat.category.opposite,
-                    value: randomConnectionValue,
+                    value: viableCat.value,
                     category: viableCat.category.category,
                     explanation: viableCat.category.explanation,
                     categoryColor: categoryColors[i],
