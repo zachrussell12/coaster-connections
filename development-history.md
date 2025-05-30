@@ -62,3 +62,7 @@
 # May 21st, 2025
 
 - **Decision 1:** Fixed error in backend puzzle creation logic causing it to find no viable coasters for a category even on the first category.
+
+# May 30th, 2025
+
+- **Decision 1:** Fixed the path issue causing the link preview images to not show up. Vite uses different pathing than the vanilla Create React App used to use.
